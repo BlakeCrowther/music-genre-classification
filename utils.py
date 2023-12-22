@@ -1,21 +1,30 @@
-def get_splits(size):
+import pandas as pd
+import torch
+from torch.utils.data import DataLoader
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
+
+from MusicClassifier import MusicClassifier
+from MusicDataset import MusicDataset
+
+def get_splits(size, tracks, features, training_features):
     set_size_mask = tracks['set', 'subset'] <= size
     
     train = tracks['set', 'split'] == 'training'
     val = tracks['set', 'split'] == 'validation'
     test = tracks['set', 'split'] == 'test'
     
-    X_train = features.loc[set_size_mask & train, 'mfcc']
-    X_test = features.loc[set_size_mask & test, 'mfcc']
+    X_train = features.loc[set_size_mask & train, training_features]
+    X_test = features.loc[set_size_mask & test, training_features]
     y_train = tracks.loc[set_size_mask & train, ('track', 'genre_top')]
     y_test = tracks.loc[set_size_mask & test, ('track', 'genre_top')]
     
     return X_train, X_test, y_train, y_test
 
-def preprocess_splits(X_train, X_test, y_train, y_test):
+def preprocess_splits(X_train, X_test, y_train, y_test, label_encoder):
     """
     Preprocesses the training and test data. This includes scaling the features and encoding the labels.
-    
+
     Parameters:
     X_train, X_test: Feature data for training and test sets.
     y_train, y_test: Label data for training and test sets.
@@ -30,7 +39,6 @@ def preprocess_splits(X_train, X_test, y_train, y_test):
     X_scaled_test = scaler.transform(X_test)
 
     # Fit the encoder and transform the labels
-    label_encoder = LabelEncoder()
     y_train_encoded = label_encoder.fit_transform(y_train)
     y_test_encoded = label_encoder.transform(y_test)
 
